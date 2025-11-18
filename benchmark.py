@@ -681,7 +681,7 @@ def main():
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     output_dir = f'./benchmark_results_{timestamp}'
     
-    benchmark = VideoEncodingBenchmark(str(Path("./BenchmarkVideos")), output_dir, True)
+    benchmark = VideoEncodingBenchmark(str(Path("./BenchmarkVideos")), output_dir, False)
     
     configs = profile.create()
     
