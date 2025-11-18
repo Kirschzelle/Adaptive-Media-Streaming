@@ -6,7 +6,7 @@ def create():
     configs = []
 
     # =========================================================================
-    # LIBVPX-VP9 (Simplified)
+    # LIBVPX-VP9
     # =========================================================================
 
     # --- Speed Preset Comparison: slow, balanced, fast ---
@@ -84,7 +84,7 @@ def create():
         ))
 
     # =========================================================================
-    # SVT-VP9 (Simplified)
+    # SVT-VP9
     # =========================================================================
 
     # --- Speed Preset Comparison: slow, balanced, fast ---
@@ -134,9 +134,7 @@ def create():
             bitrate="2000k",
             speed_preset=5,
             keyframe_interval=kf_interval,
-            extra_params={
-                "-rc": "1"
-            }
+            extra_params={}
         ))
 
     # =========================================================================
