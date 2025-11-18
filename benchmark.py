@@ -677,7 +677,6 @@ class VideoEncodingBenchmark:
 
 
 def main():
-
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     output_dir = f'./benchmark_results_{timestamp}'
     

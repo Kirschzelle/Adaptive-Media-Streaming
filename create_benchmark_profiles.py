@@ -9,7 +9,7 @@ def create():
     # LIBVPX-VP9 (Simplified)
     # =========================================================================
 
-    # Speed presets: slow, balanced, fast
+    # --- Speed Preset Comparison: slow, balanced, fast ---
     for cpu_used in [0, 2, 5]:
         configs.append(EncodingConfig(
             name=f"vpx_2000k_cpu{cpu_used}",
@@ -20,10 +20,8 @@ def create():
             extra_params={}
         ))
 
-    return configs
-
-    # Bitrate comparison (balanced only)
-    for bitrate in ["1500k", "2000k", "3000k"]:
+    # --- Bitrate Comparison at Medium Speed ---
+    for bitrate in ["1500k", "3000k"]:
         configs.append(EncodingConfig(
             name=f"vpx_{bitrate}_cpu2",
             encoder=USE_VPX,
@@ -33,7 +31,7 @@ def create():
             extra_params={}
         ))
 
-    # CRF comparison
+    # --- CRF Mode Comparison ---
     for crf in [25, 30, 35]:
         configs.append(EncodingConfig(
             name=f"vpx_crf{crf}_cpu2",
@@ -54,28 +52,34 @@ def create():
         extra_params={
             "-quality": "good",
             "-auto-alt-ref": "1",
-            "-lag-in-frames": "25"
+            "-lag-in-frames": "25",
+            "-arnr-maxframes": "7",
+            "-arnr-strength": "5",
+            "-aq-mode": "0"
         }
     ))
 
-    # Fast preset
+    # Fast preset for comparison
     configs.append(EncodingConfig(
         name="vpx_fast",
         encoder=USE_VPX,
         bitrate="2000k",
-        speed_preset=4,
+        speed_preset=5,
         keyframe_interval=240,
-        extra_params={"-deadline": "realtime"}
+        extra_params={
+            "-quality": "good",
+            "-deadline": "realtime"
+        }
     ))
 
-    # Reduced keyframe interval sweep
-    for kf in [120, 240]:
+    # --- Keyframe Interval Comparison ---
+    for kf_interval in [120, 240]:
         configs.append(EncodingConfig(
-            name=f"vpx_kf{kf}",
+            name=f"vpx_2000k_kf{kf_interval}",
             encoder=USE_VPX,
             bitrate="2000k",
             speed_preset=2,
-            keyframe_interval=kf,
+            keyframe_interval=kf_interval,
             extra_params={}
         ))
 
@@ -83,7 +87,7 @@ def create():
     # SVT-VP9 (Simplified)
     # =========================================================================
 
-    # Speed presets: slow, balanced, fast
+    # --- Speed Preset Comparison: slow, balanced, fast ---
     for preset in [1, 5, 8]:
         configs.append(EncodingConfig(
             name=f"svt_2000k_preset{preset}",
@@ -91,10 +95,12 @@ def create():
             bitrate="2000k",
             speed_preset=preset,
             keyframe_interval=240,
-            extra_params={"-rc": "1"}
+            extra_params={
+                "-rc": "1"  # VBR mode
+            }
         ))
 
-    # Bitrate sweep
+    # --- Bitrate Comparison at Medium Speed ---
     for bitrate in ["1500k", "2000k", "3000k"]:
         configs.append(EncodingConfig(
             name=f"svt_{bitrate}_preset5",
@@ -102,10 +108,12 @@ def create():
             bitrate=bitrate,
             speed_preset=5,
             keyframe_interval=240,
-            extra_params={"-rc": "1"}
+            extra_params={
+                "-rc": "1"  # VBR mode
+            }
         ))
 
-    # QP sweep
+    # --- CQP Mode (Constant Quality) ---
     for qp in [25, 30, 35]:
         configs.append(EncodingConfig(
             name=f"svt_qp{qp}_preset5",
@@ -113,41 +121,52 @@ def create():
             crf=qp,
             speed_preset=5,
             keyframe_interval=240,
-            extra_params={"-rc": "0"}
+            extra_params={
+                "-rc": "0"  # CQP mode
+            }
         ))
 
-    # Reduced keyframe interval sweep
-    for kf in [120, 240]:
+    # --- Keyframe Interval Comparison ---
+    for kf_interval in [120, 240]:
         configs.append(EncodingConfig(
-            name=f"svt_kf{kf}",
+            name=f"svt_2000k_kf{kf_interval}",
             encoder=USE_SVT,
             bitrate="2000k",
             speed_preset=5,
-            keyframe_interval=kf,
-            extra_params={"-rc": "1"}
+            keyframe_interval=kf_interval,
+            extra_params={
+                "-rc": "1"
+            }
         ))
 
     # =========================================================================
-    # Head-to-head simplified
+    # Head-to-head
     # =========================================================================
 
-    # Slow
+    # Ultra
     configs.append(EncodingConfig(
-        name="comparison_slow_vpx",
+        name="comparison_ultra_vpx",
         encoder=USE_VPX,
         bitrate="3000k",
         speed_preset=0,
         keyframe_interval=240,
-        extra_params={"-quality": "good"}
+        extra_params={
+            "-quality": "good",
+            "-auto-alt-ref": "1",
+            "-lag-in-frames": "25"
+        }
     ))
-
+    
     configs.append(EncodingConfig(
-        name="comparison_slow_svt",
+        name="comparison_ultra_svt",
         encoder=USE_SVT,
         bitrate="3000k",
-        speed_preset=1,
+        speed_preset=0,
         keyframe_interval=240,
-        extra_params={"-rc": "1"}
+        extra_params={
+            "-rc": "1",
+            "-scd": "1"
+        }
     ))
 
     # Balanced
@@ -157,16 +176,20 @@ def create():
         bitrate="2000k",
         speed_preset=2,
         keyframe_interval=240,
-        extra_params={}
+        extra_params={
+            "-quality": "good"
+        }
     ))
-
+    
     configs.append(EncodingConfig(
         name="comparison_balanced_svt",
         encoder=USE_SVT,
         bitrate="2000k",
         speed_preset=5,
         keyframe_interval=240,
-        extra_params={"-rc": "1"}
+        extra_params={
+            "-rc": "1"
+        }
     ))
 
     # Fast
@@ -176,16 +199,20 @@ def create():
         bitrate="2000k",
         speed_preset=4,
         keyframe_interval=240,
-        extra_params={}
+        extra_params={
+            "-quality": "good"
+        }
     ))
-
+    
     configs.append(EncodingConfig(
         name="comparison_fast_svt",
         encoder=USE_SVT,
         bitrate="2000k",
         speed_preset=8,
         keyframe_interval=240,
-        extra_params={"-rc": "1"}
+        extra_params={
+            "-rc": "1"
+        }
     ))
 
     print(f"Created {len(configs)} encoding configurations:")
