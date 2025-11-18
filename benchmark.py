@@ -142,7 +142,6 @@ class VideoEncodingBenchmark:
                 except Exception as e:
                     print(f"  Warning: Could not generate report for video {video_idx}: {e}")
         else:
-            # Single video - generate report in root directory
             print("\nGenerating report...")
             df_single = df.drop(columns=['video_index'])
             rankings, df_norm = self._create_rankings(df_single)
