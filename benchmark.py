@@ -56,9 +56,10 @@ class BenchmarkResult:
     psnr_value: float
     ssim_value: float
     vmaf_score: float
+    video_index: int = 0
     bitrate: str = ""
     cpu_used: int = 0
-    
+
     def to_dict(self):
         return asdict(self)
 
@@ -109,16 +110,47 @@ class VideoEncodingBenchmark:
         if not self.results:
             print("No results to report!")
             return
-        
+
         df = pd.DataFrame([r.to_dict() for r in self.results])
-        
-        rankings, df_norm = self._create_rankings(df)
-        
-        self._plot_results(df_norm, rankings)
+        video_indices = df['video_index'].unique()
+
+        if len(video_indices) > 1:
+            df_aggregated = df.groupby('config_name').agg({
+                'encoding_time': 'sum',
+                'energy_consumed': 'sum',
+                'file_size': 'sum',
+                'psnr_value': 'mean',
+                'ssim_value': 'mean',
+                'vmaf_score': 'mean',
+                'bitrate': 'first',
+                'cpu_used': 'first'
+            }).reset_index()
+
+            print("\nGenerating aggregated report...")
+            rankings, df_norm = self._create_rankings(df_aggregated)
+            self._plot_results(df_norm, rankings, subfolder="aggregated")
+
+            print(f"\nGenerating per-video reports for {len(video_indices)} videos...")
+            for video_idx in video_indices:
+                df_video = df[df['video_index'] == video_idx].copy()
+                df_video = df_video.drop(columns=['video_index'])
+
+                try:
+                    rankings_video, df_norm_video = self._create_rankings(df_video)
+                    self._plot_results(df_norm_video, rankings_video, subfolder=f"video_{video_idx}")
+                    print(f"  Generated report for video {video_idx}")
+                except Exception as e:
+                    print(f"  Warning: Could not generate report for video {video_idx}: {e}")
+        else:
+            # Single video - generate report in root directory
+            print("\nGenerating report...")
+            df_single = df.drop(columns=['video_index'])
+            rankings, df_norm = self._create_rankings(df_single)
+            self._plot_results(df_norm, rankings)
         
     def _encode_video(self, video_index, config: EncodingConfig) -> BenchmarkResult:
         if config.encoder == USE_SVT:
-            return None
+            return None # type: ignore
         
         print(f"{config.name}:{self.videos[video_index]}")
         
@@ -165,6 +197,7 @@ class VideoEncodingBenchmark:
             psnr_value=psnr_val,
             ssim_value=ssim_val,
             vmaf_score=vmaf_score, # type: ignore
+            video_index=video_index,
         )
         
         self.results.append(result)
@@ -406,8 +439,15 @@ class VideoEncodingBenchmark:
         
         return rankings, df_norm
     
-    def _plot_results(self, df: pd.DataFrame, rankings: Dict[str, pd.DataFrame]):
+    def _plot_results(self, df: pd.DataFrame, rankings: Dict[str, pd.DataFrame], subfolder: str = ""):
         sns.set_style("whitegrid")
+
+        # Create subfolder if specified
+        if subfolder:
+            plot_dir = self.output_dir / subfolder
+            plot_dir.mkdir(exist_ok=True)
+        else:
+            plot_dir = self.output_dir
         
         plt.figure(figsize=(20, 14))
         
@@ -552,15 +592,15 @@ class VideoEncodingBenchmark:
         ax12.set_ylim(0, 1.1)
         
         plt.tight_layout()
-        
-        output_path = self.output_dir / "benchmark_results.png"
+
+        output_path = plot_dir / "benchmark_results.png"
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
-        
-        self._create_detailed_plots(df, rankings)
 
-    def _create_detailed_plots(self, df: pd.DataFrame, rankings: Dict[str, pd.DataFrame]):
-        
+        self._create_detailed_plots(df, rankings, plot_dir)
+
+    def _create_detailed_plots(self, df: pd.DataFrame, rankings: Dict[str, pd.DataFrame], plot_dir: Path):
+
         _, axes = plt.subplots(2, 2, figsize=(16, 12))
         
         df_sorted = df.sort_values('psnr_value', ascending=False)
@@ -601,7 +641,7 @@ class VideoEncodingBenchmark:
         axes[1, 1].grid(axis='y', alpha=0.3)
         
         plt.tight_layout()
-        output_path = self.output_dir / "quality_metrics_detailed.png"
+        output_path = plot_dir / "quality_metrics_detailed.png"
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
@@ -640,7 +680,7 @@ class VideoEncodingBenchmark:
         axes[1, 1].grid(axis='y', alpha=0.3)
         
         plt.tight_layout()
-        output_path = self.output_dir / "performance_metrics_detailed.png"
+        output_path = plot_dir / "performance_metrics_detailed.png"
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
@@ -675,7 +715,7 @@ class VideoEncodingBenchmark:
             axes[1, 1].annotate(row['config_name'], (row['encoding_time'], row['energy_consumed']), fontsize=7, alpha=0.7)
         
         plt.tight_layout()
-        output_path = self.output_dir / "tradeoff_analysis.png"
+        output_path = plot_dir / "tradeoff_analysis.png"
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
 
