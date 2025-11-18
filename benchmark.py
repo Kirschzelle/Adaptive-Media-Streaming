@@ -80,6 +80,8 @@ class VideoEncodingBenchmark:
         benchmarks = []
         for i in range(0,len(self.videos)):
             benchmark = self._encode_video(i, config)
+            if benchmark is None:
+                continue
             benchmarks.append(benchmark)
 
         return benchmarks
@@ -115,6 +117,9 @@ class VideoEncodingBenchmark:
         self._plot_results(df_norm, rankings)
         
     def _encode_video(self, video_index, config: EncodingConfig) -> BenchmarkResult:
+        if config.encoder == USE_SVT:
+            return None
+        
         print(f"{config.name}:{self.videos[video_index]}")
         
         output_file = self.output_dir / f"{config.name}_{video_index}.webm"
@@ -677,7 +682,6 @@ class VideoEncodingBenchmark:
 
 
 def main():
-
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     output_dir = f'./benchmark_results_{timestamp}'
     
